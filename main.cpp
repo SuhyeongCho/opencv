@@ -12,16 +12,21 @@ void sliceImage(int *, int,int&, int&);
 
 int main(int argc, char* argv[]) {
     Mat dst1,dst2;
+    
+    //이미지 불러오기
     Mat image = imread("/Users/suhyeongcho/Desktop/opencv/src/cancer3.jpg", cv::IMREAD_COLOR);
     
+    //이미지 -> 흰검 화 시키는 작업 + 저장
     cvtColor(image, dst1, CV_BGR2YCrCb);
     inRange(dst1, Scalar(0, 135, 80), Scalar(255, 171, 124), dst2);
     imwrite("/Users/suhyeongcho/Desktop/opencv/src/ycc_cancer3.jpg", dst2);
     
+    //흰검 이미지 불러오기
     image = imread("/Users/suhyeongcho/Desktop/opencv/src/ycc_cancer3.jpg", cv::IMREAD_COLOR);
+    
+    
     int row = image.rows;//470 세로
     int col = image.cols;//624 가로
-    
     
     int width[624] = { 0 };
     int width2[470] = {0};
@@ -29,6 +34,10 @@ int main(int argc, char* argv[]) {
     float width2_f[470] = {0.0};
     int red = 0,green = 0,blue = 0;
     
+    //자르기자르기자르기
+    int col_start = 0, col_end = 0;
+    int row_start = 0, row_end = 0;
+    //세로축 자르기 위한 rgb값 평균 구하는 과정
     for (int i = 0; i < row; i++) {
         for (int j = 0; j < col; j++) {
             red = image.at<Vec3b>(i, j)[2];
@@ -38,19 +47,14 @@ int main(int argc, char* argv[]) {
         }
     }
     
-    
     for (int i = 0; i < col; i++) {
         width_f[i] = (float)width[i] / (3 * row);
         width[i] = (int)width_f[i];
     }
-    
-    
-    int col_start = 0, col_end = 0;
-    int row_start = 0, row_end = 0;
-
-
+    //세로축 자르기
     sliceImage(width,col,col_start,col_end);
     
+    //가로축 자르기 위한 rgb값 평균 구하는 과정
     for (int i = 0; i < row; i++) {
         for (int j = 0; j < col; j++) {
             red = image.at<Vec3b>(i, j)[2];
@@ -64,21 +68,20 @@ int main(int argc, char* argv[]) {
         width2_f[i] = (float)width2[i] / (3 * col);
         width2[i] = (int)width2_f[i];
     }
-    
+    //가로축 자르기
     sliceImage(width2,row,row_start,row_end);
-    
-    
-    
     
     
     cout<<"row : "<<row_start<<','<<row_end<<endl;
     cout<<"col : "<<col_start<<','<<col_end<<endl;
     
-    
-    
+    //이미지를 자르기 -> cut에 저장
     Mat cut;
     cut = image(Range(row_start,row_end),Range(col_start,col_end));
     
+    //이미지 자른거 사분할하기
+    //1 0
+    //2 3 순서
     Mat quarter[4];
     Mat flip_quarter[4];
     int cut_row = cut.rows;
@@ -88,10 +91,13 @@ int main(int argc, char* argv[]) {
     quarter[2] = cut(Range(cut_row/2,cut_row),Range(0,cut_col/2));
     quarter[3] = cut(Range(cut_row/2,cut_row),Range(cut_col/2,cut_col));
     
+    //사분할 이미지 뒤집기
     flip_quarter[0] = quarter[0];
     flip(quarter[1], flip_quarter[1], 1);
     flip(quarter[2], flip_quarter[2], -1);
     flip(quarter[3], flip_quarter[3], 0);
+    
+    //이미지 픽셀 값 차이 나는지 확인해서 확률 구하기
     int sum1 = 0,sum2 = 0;
     int size = 0;
     for(int i=0;i<flip_quarter[0].rows;i++){
@@ -103,6 +109,7 @@ int main(int argc, char* argv[]) {
             if(num2) sum2++;
         }
     }
+    
     cout<<1-(double)sum1/size<<endl;
     cout<<1-(double)sum2/size<<endl;
 
@@ -123,21 +130,10 @@ int main(int argc, char* argv[]) {
 //    waitKey();
 }
 
-
-
-
-
-
-
-
-
-
-
-
+//문돌이가 구현한 자르기 함수
 void sliceImage(int *width,int size,int& start,int& end){
-    diff(width, size);
     
-   
+    diff(width, size);
     
     //여기서 대충 계산 되었다고 치고
     int long_under = 0, long_over = 0;
@@ -184,6 +180,7 @@ void sliceImage(int *width,int size,int& start,int& end){
     }
 }
 
+//다음꺼 뺴기 지금꺼 함수// 양수면 지금꺼가 더 어둡다 // 음수면 다음꺼가 더 어둡다
 void diff(int * width, int col) {
     for (int i = 0; i < col-1; i++) {
         width[i] = width[i + 1] - width[i];
