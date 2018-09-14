@@ -110,8 +110,8 @@ int main(int argc, char* argv[]) {
         }
     }
     
-    cout<<1-(double)sum1/size<<endl;
-    cout<<1-(double)sum2/size<<endl;
+    cout<<1-(double)sum1/size<<endl; //1사분면과 3사분면 유사도
+    cout<<1-(double)sum2/size<<endl; //2사분면과 4사분면 유사도
 
     
 //    namedWindow("a");
