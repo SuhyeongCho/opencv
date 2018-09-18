@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cstdlib>
+#include <cstdio>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
@@ -32,7 +33,7 @@ int main(){
     if(bind(serv_sock,(struct sockaddr*)&serv_addr,sizeof(serv_addr))==-1)
         error_handling("bind() error");
     cout<<"bind()"<<endl;
-    if(listen(serv_sock,5)==-1)
+    if(listen(serv_sock,1)==-1)
         error_handling("listen() error");
     cout<<"listen()"<<endl;
     socklen_t clnt_addr_size = sizeof(clnt_addr);
@@ -41,14 +42,14 @@ int main(){
         error_handling("accept() error");
     cout<<"Connected"<<endl;
     
-    while((str_len=read(clnt_sock, message, BUF_SIZE))!=0){
-        cout<<str_len<<endl;
-        write(clnt_sock, message, str_len);
-        cout<<"case"<<endl;
-    }
+    str_len = read(clnt_sock,message,BUF_SIZE);
+    if(str_len == -1) error_handling("read() error");
+    cout<<"str_len : "<<str_len<<endl;
+    cout<<"message : "<<message<<endl;
+//    int result = write(clnt_sock,message,str_len);
+//    if(result == -1) error_handling("write() error");
     
-    cout<<message<<endl;
-    
+    cout<<"close"<<endl;
     close(serv_sock);
     close(clnt_sock);
     return 0;
