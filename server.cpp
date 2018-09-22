@@ -14,7 +14,7 @@ void error_handling(char* str){
 }
 
 int main(){
-    const int BUF_SIZE = 1024;
+    const int BUF_SIZE = 512*512;
     char message[BUF_SIZE];
     int str_len;
     const int PORT = 3000;
@@ -46,8 +46,8 @@ int main(){
     if(str_len == -1) error_handling("read() error");
     cout<<"str_len : "<<str_len<<endl;
     cout<<"message : "<<message<<endl;
-//    int result = write(clnt_sock,message,str_len);
-//    if(result == -1) error_handling("write() error");
+    int result = write(clnt_sock,message,str_len);
+    if(result == -1) error_handling("write() error");
     
     cout<<"close"<<endl;
     close(serv_sock);
