@@ -12,8 +12,6 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-
-#define IMAGE_SIZE 4032*3024
 using namespace std;
 
 cv::Mat masking(cv::Mat, int, int, float, float);//return masking image
@@ -29,7 +27,7 @@ void error_handling(char* str){
 
 int main(int argc, char* argv[]) {
     
-    const int BUF_SIZE = IMAGE_SIZE;
+    const int BUF_SIZE = 1280*720;
     char message[BUF_SIZE];
     int str_len;
     const int PORT = 3000;
@@ -45,8 +43,7 @@ int main(int argc, char* argv[]) {
     serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     serv_addr.sin_port=htons(PORT);
     
-    
-    if(::bind(serv_sock,(struct sockaddr*)&serv_addr,sizeof(serv_addr)) == -1)
+    if(bind(serv_sock,(struct sockaddr*)&serv_addr,sizeof(serv_addr))==-1)
         error_handling("bind() error");
     cout<<"bind()"<<endl;
     if(listen(serv_sock,1)==-1)
@@ -59,7 +56,7 @@ int main(int argc, char* argv[]) {
     cout<<"Connected"<<endl;
     
     int sum = 0;
-    ofstream outFile("/Users/suhyeongcho/Desktop/opencv/opencv/output.jpg");
+    ofstream outFile("output.jpg");
     while(1){
         str_len = read(clnt_sock,message,BUF_SIZE);
         if(str_len <=0){/*error_handling("read() error");*/break;}
@@ -78,14 +75,7 @@ int main(int argc, char* argv[]) {
     close(clnt_sock);
     
     
-    
-    
-    
-    
-    
-    
-    cv::Mat image = cv::imread("/Users/suhyeongcho/Desktop/opencv/opencv/output.jpg", cv::IMREAD_COLOR);//원본 이미지
-    
+    cv::Mat image = cv::imread("/Users/suhyeongcho/Desktop/opencv/opencv/ouput.jpg", cv::IMREAD_COLOR);//원본 이미지
     int row = image.rows;//세로
     int col = image.cols;//가로
     cv::Mat black = masking(image, row, col, 0.3, 1.3);//흑백 이미지
@@ -267,4 +257,3 @@ void histogram(cv::Mat capture) {
     cv::imshow("HSV2BGR", dst);
     cv::imshow("Histogram", histImage);
 }
-

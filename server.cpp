@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <cstdlib>
 #include <cstdio>
 #include <sys/socket.h>
@@ -14,7 +15,7 @@ void error_handling(char* str){
 }
 
 int main(){
-    const int BUF_SIZE = 512*512;
+    const int BUF_SIZE = 1280*720;
     char message[BUF_SIZE];
     int str_len;
     const int PORT = 3000;
@@ -42,13 +43,21 @@ int main(){
         error_handling("accept() error");
     cout<<"Connected"<<endl;
     
-    str_len = read(clnt_sock,message,BUF_SIZE);
-    if(str_len == -1) error_handling("read() error");
-    cout<<"str_len : "<<str_len<<endl;
-    cout<<"message : "<<message<<endl;
-    int result = write(clnt_sock,message,str_len);
-    if(result == -1) error_handling("write() error");
-    
+    int sum = 0;
+    ofstream outFile("output.jpg");
+    while(1){
+        str_len = read(clnt_sock,message,BUF_SIZE);
+        if(str_len <=0){/*error_handling("read() error");*/break;}
+        sum += str_len;
+        cout<<"str_len : "<<str_len<<endl;
+        cout<<endl;
+        for(int i=0;i<str_len;i++)
+            outFile<<message[i];
+    }
+    outFile.close();
+    cout<<"sum : "<<sum<<endl;
+//    int result = write(clnt_sock,message,str_len);
+//    if(result == -1) error_handling("write() error");
     cout<<"close"<<endl;
     close(serv_sock);
     close(clnt_sock);
