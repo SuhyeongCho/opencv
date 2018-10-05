@@ -34,7 +34,6 @@ void error_handling(char* str){
 
 
 int main(int argc, char* argv[]) {
-    
     const int BUF_SIZE = 1280*720;
     char message[BUF_SIZE];
     int str_len;
