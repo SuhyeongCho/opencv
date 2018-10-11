@@ -17,21 +17,17 @@
 
 using namespace std;
 
-cv::Mat masking(cv::Mat);//return masking image
-void fill(cv::Mat);
-int * find(cv::Mat);//return left,right,top,bottom
-cv::Mat cutting(cv::Mat, int *);//return cuting image
-void histogram(cv::Mat);
-float symmetry(cv::Mat);// return degree of symmetry
-
-
-
 void error_handling(char* str){
     cout<<str<<endl;
     exit(-1);
 }
 
-
+cv::Mat masking(cv::Mat);//return masking image
+void fill(cv::Mat);
+int * find(cv::Mat);//return left,right,top,bottom
+cv::Mat cutting(cv::Mat, int *);//return cuting image
+int histogram(cv::Mat);
+float symmetry(cv::Mat);// return degree of symmetry
 
 int main(int argc, char* argv[]) {
     const int BUF_SIZE = 1280*720;
@@ -76,15 +72,19 @@ int main(int argc, char* argv[]) {
     }
     outFile.close();
     cout<<"sum : "<<sum<<endl;
-   
-   
-
+    
+    
+    
+    
+    
     cv::Mat image = cv::imread("/Users/suhyeongcho/Desktop/opencv/opencv/output.jpg", cv::IMREAD_COLOR);//원본 이미지
     cv::Mat original = cv::imread("/Users/suhyeongcho/Desktop/opencv/opencv/output.jpg", cv::IMREAD_COLOR);//원본 이미지
-
-    //string name = "case14.jpg";
-    //cv::Mat image = cv::imread("C:/Users/sfsfk/Desktop/" + name, cv::IMREAD_COLOR);//원본 이미지
-    //cv::Mat original = cv::imread("C:/Users/sfsfk/Desktop/" + name, cv::IMREAD_COLOR);//원본 이미지
+    
+    
+    
+//    string name = "case14.jpg";
+//    cv::Mat image = cv::imread("C:/Users/sfsfk/Desktop/" + name, cv::IMREAD_COLOR);//원본 이미지
+//    cv::Mat original = cv::imread("C:/Users/sfsfk/Desktop/" + name, cv::IMREAD_COLOR);//원본 이미지
     cv::imshow("img", image);
     int row = image.rows;//세로
     int col = image.cols;//가로
@@ -94,22 +94,50 @@ int main(int argc, char* argv[]) {
     cv::Mat capture = cutting(black, index);
     original = cutting(original, index);
     fill(capture);
-
-    cout << "symmetry : " << symmetry(capture) << endl;
+    
+    int resultA = (int)symmetry(capture);
+    cout<<"result : "<<resultA<<endl;
+    int resultB = 1;
+    int resultC = histogram(original);
+    int total = 95;
     cv::imshow("origi", original);
-    histogram(original);
+    
     //cv::waitKey(0);
     
+    char intStr1[10];
     
-    strcpy(message,"90,37,5,22");
+    char intStr2[10];
+
+    char intStr3[10];
+    
+    char intStr4[10];
+    
+    sprintf(intStr1, "%d", total);
+    sprintf(intStr2, "%d", resultA);
+    sprintf(intStr3, "%d", resultB);
+    sprintf(intStr4, "%d", resultC);
+
+    
+    strcat(intStr1,",");
+    strcat(intStr1,intStr2);
+    strcat(intStr1,",");
+    strcat(intStr1,intStr3);
+    strcat(intStr1,",");
+    strcat(intStr1,intStr4);
+
+    strcpy(message,intStr1);
+    
+    
     cout<<message<<endl;
     int result = write(clnt_sock,message,strlen(message));
     cout<<result<<endl;
-    
+
     cout<<"close"<<endl;
-    
+
     close(serv_sock);
     close(clnt_sock);
+    
+    
     return 0;
 }
 
@@ -296,10 +324,10 @@ float symmetry(cv::Mat image) {
     cv::imshow("top", top);
     cv::imshow("bottom", bottom);
     float matrix = end_top * col;
-    return (float)((matrix - count) / matrix);
+    return (float)((matrix - count) / matrix)*100;
 }
 
-void histogram(cv::Mat capture) { // 30정도
+int histogram(cv::Mat capture) { // 30정도
     cv::Mat dst;
     cv::Mat bgr[3];
     cv::Mat hist; //Histogram 계산값 저장
@@ -331,7 +359,7 @@ void histogram(cv::Mat capture) { // 30정도
     
     printf("카운트 수 : %d\n", count);
     
-    if (count > 10) {
+    if (count > 50) {
         printf("다양한 색조를 보입니다.");
     }
     else {
@@ -341,5 +369,5 @@ void histogram(cv::Mat capture) { // 30정도
     cv::namedWindow("Histogram", CV_WINDOW_AUTOSIZE);
     cv::imshow("HSV2BGR", dst);
     cv::imshow("Histogram", histImage);
+    return count;
 }
-
