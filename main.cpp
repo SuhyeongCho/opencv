@@ -22,11 +22,13 @@ void error_handling(char* str){
     exit(-1);
 }
 
-cv::Mat masking(cv::Mat);//return masking image
+cv::Mat masking(cv::Mat,int,int);//return masking image
 void fill(cv::Mat);
+int boundary(int *, int *);
+
 int * find(cv::Mat);//return left,right,top,bottom
 cv::Mat cutting(cv::Mat, int *);//return cuting image
-int histogram(cv::Mat);
+float histogram(cv::Mat);
 float symmetry(cv::Mat);// return degree of symmetry
 
 int main(int argc, char* argv[]) {
@@ -60,7 +62,7 @@ int main(int argc, char* argv[]) {
     cout<<"Connected"<<endl;
 
     int sum = 0;
-    ofstream outFile("/Users/suhyeongcho/Desktop/opencv/opencv/output.jpg");
+    ofstream outFile("/Users/suhyeongcho/Desktop/Github/opencv/opencv/output.jpg");
     while(sum < 1280*720 ){
         str_len = read(clnt_sock,message,BUF_SIZE);
         //if(str_len <=0) break;
@@ -74,35 +76,55 @@ int main(int argc, char* argv[]) {
     cout<<"sum : "<<sum<<endl;
     
     
+    cv::Mat image = cv::imread("/Users/suhyeongcho/Desktop/Github/opencv/opencv/output.jpg", cv::IMREAD_COLOR);//원본 이미지
+    cv::Mat original = cv::imread("/Users/suhyeongcho/Desktop/Github/opencv/opencv/output.jpg", cv::IMREAD_COLOR);//원본 이미지
     
-    
-    
-    cv::Mat image = cv::imread("/Users/suhyeongcho/Desktop/opencv/opencv/output.jpg", cv::IMREAD_COLOR);//원본 이미지
-    cv::Mat original = cv::imread("/Users/suhyeongcho/Desktop/opencv/opencv/output.jpg", cv::IMREAD_COLOR);//원본 이미지
-    
-    
-    
-//    string name = "case14.jpg";
-//    cv::Mat image = cv::imread("C:/Users/sfsfk/Desktop/" + name, cv::IMREAD_COLOR);//원본 이미지
-//    cv::Mat original = cv::imread("C:/Users/sfsfk/Desktop/" + name, cv::IMREAD_COLOR);//원본 이미지
+    cv::Mat black;
+    cv::Mat rough;
     cv::imshow("img", image);
     int row = image.rows;//세로
     int col = image.cols;//가로
-    cv::Mat black = masking(image);
+    int * index;
+    int * index2;
+    int resultA = -1, resultB = -1, resultC = -1,total=0;
+    int cloudy = 30;
+    while (true) {
+        black = masking(image, cloudy, cloudy);
+        index = find(black);
+        int sum = 0;
+        for (int i = 0; i < 4; i++)
+            sum += index[i];
+        if (sum == 0) {//못잡았다는 뜻
+            cloudy -= 10;
+        }
+        else {
+            break;
+        }
+    }
     cv::imshow("black", black);
-    int * index = find(black);
+    rough = masking(image, cloudy - 5, cloudy);
+    index2 = find(rough);
+    
+    resultB = boundary(index, index2)*100;//return result B 1이면 암 0이면 점
+    
     cv::Mat capture = cutting(black, index);
-    original = cutting(original, index);
+    
     fill(capture);
+    resultA = (int)symmetry(capture);//return result A
+    resultA = 100 - resultA;
     
-    int resultA = (int)symmetry(capture);
-    cout<<"result : "<<resultA<<endl;
-    int resultB = 1;
-    int resultC = histogram(original);
-    int total = 95;
-    cv::imshow("origi", original);
+    original = cutting(original, index);
+    cv::imshow("cut", original);
+    resultC = (int)histogram(original);//return result C
     
-    //cv::waitKey(0);
+    total = (resultA + resultB + resultC)/3;
+    
+    cout << "*********************" << endl;
+    cout << "cloud : " << cloudy << endl;
+    cout << "result A : " << resultA << "%" << endl;//100% 기준으로 대칭성
+    cout << "result B : " << resultB << "%" << endl;//1이면 암
+    cout << "result C : " << resultC << "%" << endl;//count/40*100
+    cout << "*********************" << endl;
     
     char intStr1[10];
     
@@ -127,7 +149,6 @@ int main(int argc, char* argv[]) {
 
     strcpy(message,intStr1);
     
-    
     cout<<message<<endl;
     int result = write(clnt_sock,message,strlen(message));
     cout<<result<<endl;
@@ -136,19 +157,40 @@ int main(int argc, char* argv[]) {
 
     close(serv_sock);
     close(clnt_sock);
-    
+    //cv::waitKey(0);
     
     return 0;
 }
 
 
-cv::Mat masking(cv::Mat image) {
+
+cv::Mat masking(cv::Mat image, int degree, int cloudy) {//60 50
     cv::Mat black;
     cv::Mat gray_image;
     medianBlur(image, image, 7);
     cv::cvtColor(image, gray_image, CV_BGR2GRAY); // 흑백영상으로 변환
-    cv::adaptiveThreshold(gray_image, black, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, 401, 60);
+    cv::adaptiveThreshold(gray_image, black, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, 401, degree);
+    if (degree == cloudy) {
+        cv::imshow("Tight masking", black);
+    }
+    else {
+        cv::imshow("Rough masking", black);
+    }
+    
     return black;//흑백으로 마스킹된 이미지 반환
+}
+
+int boundary(int * index1, int * index2) {
+    int size1, size2;
+    size1 = (index1[1] - index1[0])*(index1[3] - index1[2]);
+    size2 = (index2[1] - index2[0])*(index2[3] - index2[2]);
+    
+    //cout << "경계차이 비율 : " << (float)size2 / size1 * 100 << "\n";
+    if (((float)size2 / size1 * 100) > 100 && ((float)size2 / size1 * 100) < 200) {
+        //cout << "경계선이 모호합니다" << "\n";
+        return 1;
+    }
+    return 0;
 }
 
 void fill(cv::Mat black) {
@@ -275,8 +317,8 @@ int * find(cv::Mat black) {
             break;
         }
     }
-    cout << "left" << left << "right" << right << endl;
-    cout << "top" << top << "bottom" << bottom << endl;
+    //cout << "left" << left << "right" << right << endl;
+    //cout << "top" << top << "bottom" << bottom << endl;
     int * index = (int *)malloc(sizeof(int) * 4);
     index[0] = left;
     index[1] = right;
@@ -327,7 +369,7 @@ float symmetry(cv::Mat image) {
     return (float)((matrix - count) / matrix)*100;
 }
 
-int histogram(cv::Mat capture) { // 30정도
+float histogram(cv::Mat capture) { // 30정도
     cv::Mat dst;
     cv::Mat bgr[3];
     cv::Mat hist; //Histogram 계산값 저장
@@ -359,15 +401,15 @@ int histogram(cv::Mat capture) { // 30정도
     
     printf("카운트 수 : %d\n", count);
     
-    if (count > 50) {
-        printf("다양한 색조를 보입니다.");
+    if (count > 30) {
+        //printf("다양한 색조를 보입니다.\n");
     }
     else {
-        printf("다양한 색조를 보이지 않습니다.");
+        //printf("다양한 색조를 보이지 않습니다.\n");
     }
     
     cv::namedWindow("Histogram", CV_WINDOW_AUTOSIZE);
     cv::imshow("HSV2BGR", dst);
     cv::imshow("Histogram", histImage);
-    return count;
+    return ((float)count/40.0)*100;
 }
